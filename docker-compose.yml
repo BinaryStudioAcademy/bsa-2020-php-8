@@ -1,0 +1,57 @@
+version: "3.5"
+services:
+  app:
+    image: lenchv/bsa-php:0.0.2
+    volumes:
+      - ./:/app
+      - /app/public/storage
+  composer:
+    image: composer:latest
+    volumes:
+        - ./:/app
+        - ./.composer:/composer
+  db:
+    image: mariadb:latest
+    env_file:
+      - .env
+    environment:
+      - MYSQL_DATABASE=${DB_DATABASE}
+      - MYSQL_USER=${DB_USERNAME}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+  server:
+    image: nginx:stable-alpine
+    ports:
+      - 8000:80
+    volumes:
+      - ./.config/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - websocket
+      - app
+  frontend:
+    image: node:12
+    working_dir: /app
+    ports:
+      - 3000:8080
+    volumes:
+      - ./:/app
+  beanstalk:
+    image: schickling/beanstalkd:latest
+    entrypoint: [ "/usr/bin/beanstalkd", "-z", "20971520" ]
+  redis:
+    image: redis:5
+  websocket:
+    build:
+      dockerfile: .config/websocket/Dockerfile
+      context: .
+    working_dir: /app
+    ports:
+      - 6001:6001
+    depends_on:
+      - redis
+    volumes:
+      - ./:/app
+  image-api:
+    image: lenchv/image-api-php:latest
+    environment:
+      - PORT=8000
