@@ -43,7 +43,7 @@ class AuthService implements IAuthService
 
     public function register(UserData $userData): User
     {
-        $user = new User;
+        $user = new User();
 
         $user->name = $userData->name;
         $user->email = $userData->email;
